@@ -47,13 +47,17 @@ public class Main : MonoBehaviour {
 		string[] position = item.name.Split('-');
 		int x = Convert.ToInt32(position [0]);
 		int y = Convert.ToInt32(position [1]);
-		boardUpdate (x - 1, y - 1);
-		mUpdateInstance.onChange = true;
-		if (isFinish ()) {
-			finishText.enabled = true;
-			finishText.text = "XXXXX win~~~";
-		}
-		currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
+		List<Vector2> available_positions = getAvailableLocation (currentPlayer);
+		foreach (Vector2 pos in available_positions)
+			if (Vector2.Distance (pos, new Vector2 (x - 1, y - 1)) == 0) {
+				boardUpdate (x - 1, y - 1);
+				mUpdateInstance.onChange = true;
+				if (isFinish ()) {
+					finishText.enabled = true;
+					finishText.text = "XXXXX win~~~";
+				}
+				currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
+			}
 	}
 
 	// 輪到該 player 執棋時 -> 找出所有可放棋的位置

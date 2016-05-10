@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 
 public class UpdateBoardUI : MonoBehaviour {
-	public Sprite Black, White;
+	public Sprite Black, White, Hint;
 	public GameObject chessSet;
 	private SpriteRenderer[] chesses;
 	public bool onChange;
@@ -34,6 +34,7 @@ public class UpdateBoardUI : MonoBehaviour {
 					chess.sprite = White;
 					break;
 				default:
+					chess.sprite = null;
 					break;
 				}
 			}
@@ -42,7 +43,7 @@ public class UpdateBoardUI : MonoBehaviour {
 			List<Vector2> locations = mainInstance.getAvailableLocation (mainInstance.currentPlayer);
 			foreach (Vector2 position in locations) {
 				GameObject chess = GameObject.Find((position.x + 1) + "-" + (position.y + 1));
-				Debug.Log (chess);
+				chess.GetComponent<SpriteRenderer>().sprite = Hint;
 			}
 
 		}

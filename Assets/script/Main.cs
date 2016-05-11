@@ -5,30 +5,31 @@ using System.Collections.Generic;
 
 public class Main : MonoBehaviour {
 	public const int BLACK = 2, WHITE = 1;
-	public int currentPlayer;
+	public int currentPlayer , BLACK_NUM , WHITE_NUM;
 	private int[,] mBoard;
 	private int[,] heuristicValue;
 	public UpdateBoardUI mUpdateInstance;
 	public GUIText finishText;
 
-	private List<Vector2> place_location = new List<Vector2>();
 	int [,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
 		{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
 
 
-	void Start()
+	void Start()  // 遊戲初始化
 	{	
 		if(mUpdateInstance == null)
 		{
 			Debug.LogError("UpdateBoard instance should be locate.");
 		}
+		// 設置棋盤初始盤面 ( 2黑2白 )，並設定棋盤大小 ( 8X8 ) 及 heuristic 表
 		mBoard = new int[8, 8];
 		heuristicValue = new int[8, 8];
 		mBoard [3, 3] = WHITE;
 		mBoard [4, 4] = WHITE;
 		mBoard [3, 4] = BLACK;
 		mBoard [4, 3] = BLACK;
-		currentPlayer = BLACK;
+		currentPlayer = BLACK;  // 黑棋先執
+		finishText = GetComponent<GUIText>();
 		finishText.enabled = false;
 	}
 
@@ -66,6 +67,7 @@ public class Main : MonoBehaviour {
 		int target , ad_target , temp_x , temp_y;    // target : player的棋子顏色 , ad_target : 對手的棋子顏色
 		int[] temp;
 		bool unfound = true;
+		Vector2 temp_v;
 		List<Vector2> result = new List<Vector2>();  // 可放棋子的位置集合
 
 		if (player == WHITE) {   // 設定判斷依據 ( 目標棋子顏色 )
@@ -84,14 +86,19 @@ public class Main : MonoBehaviour {
 					for (int k = 0; k < 8; k++) {
 						temp_x = i + direction [k, 0];  
 						temp_y = j + direction [k, 1];
-						if (mBoard [temp_x, temp_y] == ad_target) {
-							temp = refound (temp_x, temp_y, direction [k, 0], direction [k, 1], ad_target);  // 尋找可放棋位置
-						} else {
-							temp = null;
-						}
-						if(temp != null) {
-							unfound = false;
-							result.Add(new Vector2(temp[0],temp[1]));
+						if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8) {
+							if ((mBoard [temp_x, temp_y] == ad_target)) {
+								temp = refound (temp_x, temp_y, direction [k, 0], direction [k, 1], ad_target);  // 尋找可放棋位置
+							} else {
+								temp = null;
+							}
+							if (temp != null) {
+								unfound = false;
+								temp_v = new Vector2 (temp [0], temp [1]);
+								if (!result.Contains (temp_v)) {
+									result.Add (temp_v);
+								}
+							}
 						}
 					}
 				}	
@@ -99,10 +106,18 @@ public class Main : MonoBehaviour {
 		}
 
 		if(unfound) {
-			return null;
-		} else {
-			return result;
+			for (int i = 0; i < 8; i++) {
+
+				for (int j = 0; j < 8; j++) {
+
+					if (mBoard [i, j] == 0) {
+						result.Add (new Vector2 (i, j));
+					}
+				}
+			}
 		}
+
+		return result;
 	}
 
 	// 以棋子為起點向該方位 ( movex , movey) 延伸去找尋可放置棋子的位子 
@@ -120,7 +135,9 @@ public class Main : MonoBehaviour {
 
 				place [0] = center_x;
 				place [1] = center_y;
-			} 
+			} else {
+				place = null;
+			}
 		} else {
 			place = null;	// 沒有位置可放 -> 碰到邊界或位置全部已佔滿	
 		}
@@ -134,8 +151,10 @@ public class Main : MonoBehaviour {
 
 		if(currentPlayer == WHITE) {
 			adversary = BLACK;
+			WHITE_NUM++;
 		} else {
 			adversary = WHITE;
+			BLACK_NUM++;
 		}
 
 		mBoard [pos_x, pos_y] = currentPlayer;
@@ -143,7 +162,7 @@ public class Main : MonoBehaviour {
 
 			temp_x = pos_x + direction [i, 0];  
 			temp_y = pos_y + direction [i, 1];
-			renew (temp_x, temp_y, direction [i, 0], direction [i, 1] , currentPlayer ,adversary); 																
+			renew (temp_x, temp_y, direction [i, 0], direction [i, 1], currentPlayer, adversary); 		
 		}
 	}
 
@@ -153,23 +172,26 @@ public class Main : MonoBehaviour {
 
 			if (mBoard [base_x, base_y] == ad) { // 和對方棋子相鄰 -> 繼續往相同方向檢查 -> 直到碰到邊界或空格
 
-				mBoard [base_x, base_y] = renew (base_x + dir_x, base_y + dir_y, dir_x, dir_y , p , ad);	
-			} else if (mBoard [base_x, base_y] == p) { // 若碰到自己顏色的棋子 -> 有包圍 -> 上一個變成白色
+				mBoard [base_x, base_y] = renew (base_x + dir_x, base_y + dir_y, dir_x, dir_y, p, ad);
 
+			} else if (mBoard [base_x, base_y] == p) { // 若碰到自己顏色的棋子 -> 有包圍 -> 上一個變成白色
+				
 				return p;
 
 			} else {
 				return ad;
 			}
 
-			return mBoard[base_x, base_y];
+			return mBoard [base_x, base_y];
+		} else {
+			return ad;
 		}
-		return -1;
 	}
 
 	bool isFinish() {  // 判斷遊戲結束
 
 		bool end = true;
+		int bn = 0, wn = 0;
 
 		for (int i = 0; i < 8; i++) {
 
@@ -178,14 +200,19 @@ public class Main : MonoBehaviour {
 				if (mBoard [i, j] == 0) {
 					end = false;
 					break;
+				} else if (mBoard [i, j] == BLACK) {
+					bn++;
+				} else if (mBoard [i, j] == WHITE) {
+					wn++;
 				}
 			}
 			if (!end) {
 				break;
 			}
 		}
-
+		BLACK_NUM = bn;
+		WHITE_NUM = wn;
 		return end;
 	}
-
+		
 }

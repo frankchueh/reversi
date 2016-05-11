@@ -41,11 +41,12 @@ public class UpdateBoardUI : MonoBehaviour {
 			onChange = false;
 
 			List<Vector2> locations = mainInstance.getAvailableLocation (mainInstance.currentPlayer);
-			foreach (Vector2 position in locations) {
-				GameObject chess = GameObject.Find((position.x + 1) + "-" + (position.y + 1));
-				chess.GetComponent<SpriteRenderer>().sprite = Hint;
-			}
 
+			foreach (Vector2 position in locations) {
+				GameObject chess = GameObject.Find ((position.x + 1) + "-" + (position.y + 1));
+				Debug.Log (chess);
+				chess.GetComponent<SpriteRenderer> ().sprite = Hint;
+			}
 		}
 	}
 }

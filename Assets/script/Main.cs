@@ -7,7 +7,14 @@ public class Main : MonoBehaviour {
 	public const int BLACK = 2, WHITE = 1;
 	public int currentPlayer , BLACK_NUM , WHITE_NUM;
 	private int[,] mBoard;
-	private int[,] heuristicValue;
+	private int[,] heuristicValue = { 	{ 4, -3, 2, 2, 2, 2, -3, 4 },
+									  	{ -3, -4, -1, -1, -1, -1, -4, -3 },
+									  	{ 2, -1, 1, 0, 0, 1, -1, 2 },
+										{ 2, -1, 0, 1, 1, 0, -2, 1 },
+									  	{ 2, -1, 0, 1, 1, 0, -2, 1 },
+									  	{ 2, -1, 1, 0, 0, 1, -1, 2 },
+										{ -3, -4, -1, -1, -1, -1, -4, -3 },
+										{ 4	, -3, 2, 2, 2, 2, -3, 4 }};
 	public UpdateBoardUI mUpdateInstance;
 	public GUIText finishText;
 
@@ -23,7 +30,6 @@ public class Main : MonoBehaviour {
 		}
 		// 設置棋盤初始盤面 ( 2黑2白 )，並設定棋盤大小 ( 8X8 ) 及 heuristic 表
 		mBoard = new int[8, 8];
-		heuristicValue = new int[8, 8];
 		mBoard [3, 3] = WHITE;
 		mBoard [4, 4] = WHITE;
 		mBoard [3, 4] = BLACK;
@@ -84,14 +90,16 @@ public class Main : MonoBehaviour {
 				if (mBoard [i, j] == target){   // 若找到的話，檢查其周遭的所有位置 -> 共8格
 
 					for (int k = 0; k < 8; k++) {
-						temp_x = i + direction [k, 0];  
+						temp_x = i + direction [k, 0];    
 						temp_y = j + direction [k, 1];
+						// 若在棋盤範圍內且為對方顏色棋子 -> 繼續延伸尋找 ( refound )
 						if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8) {
 							if ((mBoard [temp_x, temp_y] == ad_target)) {
 								temp = refound (temp_x, temp_y, direction [k, 0], direction [k, 1], ad_target);  // 尋找可放棋位置
 							} else {
 								temp = null;
 							}
+							// 若有找到可下位置
 							if (temp != null) {
 								unfound = false;
 								temp_v = new Vector2 (temp [0], temp [1]);
@@ -104,7 +112,7 @@ public class Main : MonoBehaviour {
 				}	
 			}
 		}
-
+		// 若找不到可下位置 -> 讓子 ( 可下任一空白處 )
 		if(unfound) {
 			for (int i = 0; i < 8; i++) {
 
@@ -214,5 +222,91 @@ public class Main : MonoBehaviour {
 		WHITE_NUM = wn;
 		return end;
 	}
-		
+
+	// 計算盤面的 heuristicEvaluate
+
+	double heuristicEvaluate(int [,] PB) {
+
+		int adversary  , current_count = 0, adver_count = 0, temp_x , temp_y ,
+		cur_front_count = 0, adv_front_count = 0 , static_value = 0, parity_value , front_value , mobility_value ;
+		double h_value;
+
+		if(currentPlayer == WHITE) {
+			adversary = BLACK;
+		} else {
+			adversary = WHITE;
+		}
+
+		// 計算黑白棋各佔的數目 , 所佔位置的值 , 周圍是否有空格的棋的數量
+
+		for (int i = 0; i < 8; i++) {
+			
+			for (int j = 0; j < 8; j++) {
+				
+				if (PB [i, j] == currentPlayer) {
+					static_value += heuristicValue [i, j];
+					current_count++;
+				} else if (PB [i, j] == adversary) {
+					static_value -= heuristicValue [i, j];
+					adver_count++;
+				}
+
+				if (PB [i, j] != 0) {
+					for (int k = 0; k < 8; k++) {
+						
+						temp_x = i + direction [k, 0];
+						temp_y = i + direction [k, 1];
+						if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8 && PB[temp_x,temp_y] == 0) {
+							if (PB [i, j] == currentPlayer) {
+								cur_front_count++;
+							} else {
+								adv_front_count++;
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// 所佔個數 heuristic 值
+
+		if (current_count > adver_count) {
+			parity_value = (100 * current_count) / (current_count + adver_count);
+		} else if (current_count < adver_count) {
+			parity_value = -(100 * adver_count) / (current_count + adver_count);
+		} else {
+			parity_value = 0;
+		}
+
+		// 周圍是否有空格的 heuristic 值
+
+		if (cur_front_count > adv_front_count) {
+			front_value = -(100 * cur_front_count) / (cur_front_count + adv_front_count);
+		} else if (cur_front_count < adv_front_count) {
+			front_value = (100 * adv_front_count) / (cur_front_count + adv_front_count);
+		} else {
+			front_value = 0;
+		}
+
+		// 可下位置數目的 heuristic 值
+
+		current_count = getAvailableLocation (currentPlayer).Count;
+		adver_count = getAvailableLocation (adversary).Count;
+
+		if (current_count > adver_count) {
+			mobility_value = (100 * current_count) / (cur_front_count + adver_count);
+		} else if (current_count < adv_front_count) {
+			mobility_value = - (100 * adver_count) / (current_count + adver_count);
+		} else {
+			mobility_value = 0;
+		}
+
+		// 加權
+
+		h_value = (10.0 * parity_value) + (74.396 * front_value) + (20 * static_value) + (78.922 * mobility_value);
+
+		return h_value;
+	}
+
 }

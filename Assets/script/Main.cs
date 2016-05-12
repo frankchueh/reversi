@@ -35,8 +35,7 @@ public class Main : MonoBehaviour {
 		mBoard [3, 4] = BLACK;
 		mBoard [4, 3] = BLACK;
 		currentPlayer = BLACK;  // 黑棋先執
-		finishText = GetComponent<GUIText>();
-		finishText.enabled = false;
+
 	}
 
 	public void setBoardChess(int x, int y)
@@ -60,8 +59,17 @@ public class Main : MonoBehaviour {
 				boardUpdate (x - 1, y - 1);
 				mUpdateInstance.onChange = true;
 				if (isFinish ()) {
-					finishText.enabled = true;
-					finishText.text = "XXXXX win~~~";
+					if(BLACK_NUM > WHITE_NUM)
+					{
+						finishText.text = "Black Win!";
+					}
+					else if(BLACK_NUM < WHITE_NUM)
+					{
+						finishText.text = "White Win!";
+					}
+					else if(BLACK_NUM == WHITE_NUM ){
+						finishText.text = "Tie";	
+					}
 				}
 				currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
 			}

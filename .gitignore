@@ -1,7 +1,5 @@
 Assembly-CSharp.csproj
 Library/
-ProjectSettings/
 Reversi.sln
-Reversi.userprefs
 Temp/
 obj/

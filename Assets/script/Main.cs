@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class Main : MonoBehaviour {
 	public const int BLACK = 2, WHITE = 1;
 	public int currentPlayer , BLACK_NUM , WHITE_NUM;
-	private int[,] mBoard;
+	public int[,] mBoard;
 	private int[,] heuristicValue = { 	{ 4, -3, 2, 2, 2, 2, -3, 4 },
 									  	{ -3, -4, -1, -1, -1, -1, -4, -3 },
 									  	{ 2, -1, 1, 0, 0, 1, -1, 2 },
@@ -233,7 +233,7 @@ public class Main : MonoBehaviour {
 
 	// 計算盤面的 heuristicEvaluate
 
-	double heuristicEvaluate(int [,] PB) {
+	public double heuristicEvaluate(int [,] PB) {
 
 		int adversary  , current_count = 0, adver_count = 0, temp_x , temp_y ,
 		cur_front_count = 0, adv_front_count = 0 , static_value = 0, parity_value , front_value , mobility_value ;

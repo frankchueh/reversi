@@ -40,8 +40,7 @@ public class AI : MonoBehaviour {
 			case BFS:
 				location = BestFirstSearch(playerColor);
 				break;
-		case GAME_ALGORITHM:
-            case GameAlgorithm:
+    		case GAME_ALGORITHM:
                 location = GameAlgorithm(playerColor);
                 break;
         }
@@ -139,7 +138,8 @@ public class AI : MonoBehaviour {
     Vector2 GameAlgorithm(int player)
     {
         int[,] initBoard = (int[,])mainInstance.mBoard.Clone();
-        GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), player);
+        int color = (player == 2) ? 1 : -1;
+        GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), color);
         int[] step = ga.bestMove();
         Vector2 bestPosition = new Vector2(step[0], step[1]);
         return bestPosition;

@@ -18,7 +18,7 @@ public class Main : MonoBehaviour {
 	public UpdateBoardUI mUpdateInstance;
 	public GUIText finishText;
 
-	int [,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
+	public int [,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
 		{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
 
 
@@ -54,26 +54,27 @@ public class Main : MonoBehaviour {
 		int x = Convert.ToInt32(position [0]);
 		int y = Convert.ToInt32(position [1]);
 		List<Vector2> available_positions = getAvailableLocation (currentPlayer);
-		foreach (Vector2 pos in available_positions)
-			if (Vector2.Distance (pos, new Vector2 (x - 1, y - 1)) == 0) {
-				boardUpdate (x - 1, y - 1);
-				mUpdateInstance.onChange = true;
-				if (isFinish ()) {
-					if(BLACK_NUM > WHITE_NUM)
-					{
-						finishText.text = "Black Win!";
+		if (available_positions != null) {
+			foreach (Vector2 pos in available_positions)
+				if (Vector2.Distance (pos, new Vector2 (x - 1, y - 1)) == 0) {
+					boardUpdate (x - 1, y - 1);
+					mUpdateInstance.onChange = true;
+					if (isFinish ()) {
+						if (BLACK_NUM > WHITE_NUM) {
+							finishText.text = "Black Win!";
+						} else if (BLACK_NUM < WHITE_NUM) {
+							finishText.text = "White Win!";
+						} else if (BLACK_NUM == WHITE_NUM) {
+							finishText.text = "Tie";	
+						}
 					}
-					else if(BLACK_NUM < WHITE_NUM)
-					{
-						finishText.text = "White Win!";
-					}
-					else if(BLACK_NUM == WHITE_NUM ){
-						finishText.text = "Tie";	
-					}
+					currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
 				}
-				currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
-			}
+		} else {	// 若沒有地方可下 -> 換對手下
+			currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
+		}
 	}
+		
 
 	// 輪到該 player 執棋時 -> 找出所有可放棋的位置
 	public List<Vector2> getAvailableLocation(int player) {
@@ -122,7 +123,7 @@ public class Main : MonoBehaviour {
 		}
 		// 若找不到可下位置 -> 讓子 ( 可下任一空白處 )
 		if(unfound) {
-			for (int i = 0; i < 8; i++) {
+			/*for (int i = 0; i < 8; i++) {
 
 				for (int j = 0; j < 8; j++) {
 
@@ -130,7 +131,8 @@ public class Main : MonoBehaviour {
 						result.Add (new Vector2 (i, j));
 					}
 				}
-			}
+			}*/
+			result = null;
 		}
 
 		return result;
@@ -298,13 +300,25 @@ public class Main : MonoBehaviour {
 		}
 
 		// 可下位置數目的 heuristic 值
+		List<Vector2> tempv1 = getAvailableLocation (currentPlayer);
+		List<Vector2> tempv2 = getAvailableLocation (adversary);
 
-		current_count = getAvailableLocation (currentPlayer).Count;
-		adver_count = getAvailableLocation (adversary).Count;
+		if (tempv1 != null) {
+			current_count = tempv1.Count;
+		} else {
+			current_count = 0;
+		}
+
+		if (tempv2 != null) {
+			adver_count = tempv2.Count;
+		} else {
+			adver_count = 0;
+		}
+
 
 		if (current_count > adver_count) {
 			mobility_value = (100 * current_count) / (current_count + adver_count);
-		} else if (current_count < adv_front_count) {
+		} else if (current_count < adver_count) {
 			mobility_value = - (100 * adver_count) / (current_count + adver_count);
 		} else {
 			mobility_value = 0;

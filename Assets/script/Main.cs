@@ -303,7 +303,7 @@ public class Main : MonoBehaviour {
 		adver_count = getAvailableLocation (adversary).Count;
 
 		if (current_count > adver_count) {
-			mobility_value = (100 * current_count) / (cur_front_count + adver_count);
+			mobility_value = (100 * current_count) / (current_count + adver_count);
 		} else if (current_count < adv_front_count) {
 			mobility_value = - (100 * adver_count) / (current_count + adver_count);
 		} else {

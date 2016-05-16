@@ -5,26 +5,26 @@ using System.Collections.Generic;
 
 
 public class GameAi {
-	int[,] heuristicValue = { 	{ 4, -3, 2, 2, 2, 2, -3, 4 },
-		{ -3, -4, -1, -1, -1, -1, -4, -3 },
-		{ 2, -1, 1, 0, 0, 1, -1, 2 },
-		{ 2, -1, 0, 1, 1, 0, -2, 1 },
-		{ 2, -1, 0, 1, 1, 0, -2, 1 },
-		{ 2, -1, 1, 0, 0, 1, -1, 2 },
-		{ -3, -4, -1, -1, -1, -1, -4, -3 },
-		{ 4	, -3, 2, 2, 2, 2, -3, 4 }};
-	int [,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
-		{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
-	const int WHITE = -1;
-	const int BLACK = 1;
+    /**---------------------------------------------------------------------------------------------------*/
+    const int BLACK = 1, WHITE = -1;
+    private int[,] heuristicValue = {   { 4, -3, 2, 2, 2, 2, -3, 4 },
+                                        { -3, -4, -1, -1, -1, -1, -4, -3 },
+                                        { 2, -1, 1, 0, 0, 1, -1, 2 },
+                                        { 2, -1, 0, 1, 1, 0, -2, 1 },
+                                        { 2, -1, 0, 1, 1, 0, -2, 1 },
+                                        { 2, -1, 1, 0, 0, 1, -1, 2 },
+                                        { -3, -4, -1, -1, -1, -1, -4, -3 },
+                                        { 4 , -3, 2, 2, 2, 2, -3, 4 }};
 
+    int[,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
+	{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
+    /**---------------------------------------------------------------------------------------------------*/
 
-
-	public Main mainInstance;
     static int maxlevel = 1; //預測層數 ***level
     int curLevel; //現在層數
     int curColor; //現在顏色
     int stepCounts; //可走的步數
+    double levelExtremumValue; //sibling max value
     int[][] curChessboard; //現在棋盤
     List<Data> possibleStep = new List<Data>(); //所有可走的步
 
@@ -43,9 +43,10 @@ public class GameAi {
         curLevel = 0;
         curChessboard = board;
         curColor = color;
+        levelExtremumValue = 0;
     }
 
-    public GameAi(int level, int[][] board, int color)
+    public GameAi(int level, int[][] board, int color, double extremumValue)
     {
         /*
         Console.WriteLine(level);
@@ -69,53 +70,81 @@ public class GameAi {
         curLevel = level;
         curChessboard = board;
         curColor = color;
+        levelExtremumValue = extremumValue;
     }
-        
+
     //get best move step
     public int[] bestMove()
     {
-		double bestWeight = -10000;
         if (curLevel == maxlevel)
-            return new int[] { -1, -1};
+            return new int[] { -1, -1 };
         findPossibleStepAI();
-		if (stepCounts == 0)
-			return new int[] { -1, -1 };
+        if (stepCounts == 0)
+            return new int[] { -1, -1 };
         List<int[]> bestStep = new List<int[]>();
-        bestStep.Add(new int[]{ -1, -1});
+        double bestWeight = Double.MinValue;
+        bestStep.Add(new int[] { -1, -1 });
+        double extremumValue = Double.MinValue;
         foreach (Data data in possibleStep)
         {
             //往下找 新的AI為curlevel+1 , 棋盤下一步 , 顏色變換
-            double subWeight = new GameAi(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor).weight();
-            //Console.WriteLine("curLevel : "+curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
-			Debug.Log("weight "+subWeight);
-			if (subWeight >= bestWeight)    //maximize (Random select)
+            double subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, extremumValue).weight();
+            //             Console.WriteLine("curLevel : "+curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
+            if (subWeight >= bestWeight)    //maximize (Random select)
             {
-				if (subWeight > bestWeight)
+                if (subWeight > bestWeight)
+                {
+                    bestWeight = subWeight;
                     bestStep.Clear();
-                int[] temp = new int[2];
+                }
+                int[] temp = new int[3];
                 temp[0] = data.getRow();
                 temp[1] = data.getColumn();
                 bestStep.Add(temp);
             }
         }
-        System.Random random = new System.Random();
+        //          Console.WriteLine(" weight : " + bestWeight );
+        Random random = new Random();
         return bestStep[random.Next(bestStep.Count)];
     }
     //recursive find best step weight (called by bestMove) 
-    public double weight()
+    private double weight()
     {
         if (curLevel == maxlevel)
             return countChess();
         findPossibleStepAI();
-        if(stepCounts == 0)
+        if (stepCounts == 0)
             return countChess();
-        double bestWeight = -10000;
-        double worstWeight = 10000;
-        foreach(Data data in possibleStep)
+        //初始化為最小值
+        double bestWeight = Double.MinValue;
+        //初始化為最大值
+        double worstWeight = Double.MaxValue;
+
+        foreach (Data data in possibleStep)
         {
             //往下找 新的AI為curlevel+1 , 棋盤下一步 , 顏色變換
-            double subWeight = new GameAi(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor).weight();
-            //Console.WriteLine("curLevel : " + curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
+            double subWeight;
+            if (curLevel % 2 == 0)
+            {
+                subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
+                //parent node取最小值, 由child node中取最大值, 所以這個subWeight > levelExtremumValue則直接break
+                if (subWeight > levelExtremumValue)
+                {
+                    //                      Console.WriteLine("curLevel : "+curLevel+" break");
+                    return subWeight;
+                }
+            }
+            else
+            {
+                subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, worstWeight).weight();
+                //parent node取最大值, 由child node中取最小值, 所以這個subWeight < levelExtremumValue則直接break
+                if (subWeight < levelExtremumValue)
+                {
+                    //                      Console.WriteLine("curLevel : " + curLevel + " break");
+                    return subWeight;
+                }
+            }
+            //              Console.WriteLine("curLevel : " + curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
             //maximize
             if (subWeight > bestWeight)
                 bestWeight = subWeight;
@@ -123,197 +152,274 @@ public class GameAi {
             if (subWeight < worstWeight)
                 worstWeight = subWeight;
         }
+        //          Console.WriteLine("curLevel "+ curLevel +" weight : " + bestWeight + " " +worstWeight);
+
         //如果為偶數(自己下棋的回合則maximize，對手則minimize)
-        if (curLevel % 2 == 0)  //maximize
+        if (curLevel % 2 == 0)  //maximize 
             return bestWeight;
         else                    //minimize
             return worstWeight;
     }
+
+
+
+
+
+
     //count black and white chess
     private double countChess()
-	{
-		int adversary  , current_count = 0, adver_count = 0, temp_x , temp_y ,
-		cur_front_count = 0, adv_front_count = 0 , static_value = 0, parity_value , front_value , mobility_value ;
-		double h_value;
-
-		adversary = -curColor;
-
-		// 計算黑白棋各佔的數目 , 所佔位置的值 , 周圍是否有空格的棋的數量
-		for (int i = 0; i < 8; i++) {
-
-			for (int j = 0; j < 8; j++) {
-
-				if (curChessboard [i] [j] == curColor) {
-					static_value += heuristicValue [i, j];
-					current_count++;
-				} else if (curChessboard [i] [j] == adversary) {
-					static_value -= heuristicValue [i, j];
-					adver_count++;
-				}
-				if (curChessboard [i] [j] != 0) {
-					for (int k = 0; k < 8; k++) {
-
-						temp_x = i + direction [k, 0];
-						temp_y = i + direction [k, 1];
-						if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8 && curChessboard[temp_x] [temp_y] == 0) {
-							if (curChessboard [i] [ j] == curColor) {
-								cur_front_count++;
-							} else {
-								adv_front_count++;
-							}
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		// 所佔個數 heuristic 值
-		if (current_count > adver_count) {
-			parity_value = (100 * current_count) / (current_count + adver_count);
-		} else if (current_count < adver_count) {
-			parity_value = -(100 * adver_count) / (current_count + adver_count);
-		} else {
-			parity_value = 0;
-		}
-		// 周圍是否有空格的 heuristic 值
-		if (cur_front_count > adv_front_count) {
-			front_value = -(100 * cur_front_count) / (cur_front_count + adv_front_count);
-		} else if (cur_front_count < adv_front_count) {
-			front_value = (100 * adv_front_count) / (cur_front_count + adv_front_count);
-		} else {
-			front_value = 0;
-		}
-
-		// 可下位置數目的 heuristic 值
-		current_count = getAvailableLocation (curColor).Count;
-		adver_count = getAvailableLocation (adversary).Count;
-		Debug.Log("Count "+current_count+" "+adver_count);
-		if (current_count > adver_count) {
-			mobility_value = (100 * current_count) / (cur_front_count + adver_count);
-		} else if (current_count < adv_front_count) {
-			mobility_value = - (100 * adver_count) / (current_count + adver_count);
-		} else {
-			mobility_value = 0;
-		}
-
-		// 加權
-		h_value = (10.0 * parity_value) + (74.396 * front_value) + (20 * static_value) + (78.922 * mobility_value);
-
-		return h_value;
+    {
+        /*
+        int black = 0;
+        int white = 0;
+        for(int i = 0 ; i < curChessboard.Length ; i++)
+        {
+            for (int j = 0 ; j< curChessboard[0].Length ; j++)
+            {
+                if (curChessboard[i][j] == 1)
+                    black++;
+                else if (curChessboard[i][j] == -1)
+                    white++;
+            }
+        }curColor為現在要下的人的棋的顏色 但是要看上一步所造成的效果
+        return black;
+        */
+        return heuristicEvaluate();
     }
 
-	// 輪到該 player 執棋時 -> 找出所有可放棋的位置
-	public List<Vector2> getAvailableLocation(int player) {
+    // 計算盤面的 heuristicEvaluate
+    public double heuristicEvaluate()
+    {
+        int adversary, current_count = 0, adver_count = 0, temp_x, temp_y;
+        int cur_front_count = 0, adv_front_count = 0;
+        int static_value = 0;
+        double parity_value, front_value, mobility_value;/******double? int?*/
+        double h_value;
 
-		int target , ad_target , temp_x , temp_y;    // target : player的棋子顏色 , ad_target : 對手的棋子顏色
-		int[] temp;
-		bool unfound = true;
-		Vector2 temp_v;
-		List<Vector2> result = new List<Vector2>();  // 可放棋子的位置集合
+        adversary = -curColor;
 
-		if (player == WHITE) {   // 設定判斷依據 ( 目標棋子顏色 )
-			target = WHITE;
-			ad_target = BLACK;
-		} else {
-			target = BLACK;
-			ad_target = WHITE;
-		}
+        // 計算黑白棋各佔的數目 , 所佔位置的值 , 周圍是否有空格的棋的數量
 
-		for (int i = 0; i < 8; i++) {  // 掃過整個盤面，尋找 player 所有的棋子
+        for (int i = 0; i < 8; i++)
+        {
 
-			for (int j = 0; j < 8; j++) {
-				if (curChessboard [i][ j] == target){   // 若找到的話，檢查其周遭的所有位置 -> 共8格
+            for (int j = 0; j < 8; j++)
+            {
+                //自己的顏色
+                if (curChessboard[i][j] == curColor)
+                {
+                    static_value += heuristicValue[i, j];
+                    current_count++;
+                }
+                //對手的顏色
+                else if (curChessboard[i][j] == adversary)
+                {
+                    static_value -= heuristicValue[i, j];
+                    adver_count++;
+                }
+                //非沒人下
+                if (curChessboard[i][j] != 0)
+                {
+                    for (int k = 0; k < 8; k++)
+                    {
 
-					for (int k = 0; k < 8; k++) {
-						temp_x = i + direction [k, 0];    
-						temp_y = j + direction [k, 1];
-						// 若在棋盤範圍內且為對方顏色棋子 -> 繼續延伸尋找 ( refound )
-						if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8) {
-							if ((curChessboard [temp_x][ temp_y] == ad_target)) {
-								temp = refound (temp_x, temp_y, direction [k, 0], direction [k, 1], ad_target);  // 尋找可放棋位置
-							} else {
-								temp = null;
-							}
-							// 若有找到可下位置
-							if (temp != null) {
-								unfound = false;
-								temp_v = new Vector2 (temp [0], temp [1]);
-								if (!result.Contains (temp_v)) {
-									result.Add (temp_v);
-								}
-							}
-						}
-					}
-				}	
-			}
-		}
-		// 若找不到可下位置 -> 讓子 ( 可下任一空白處 )
-		if(unfound) {
-			for (int i = 0; i < 8; i++) {
+                        temp_x = i + direction[k, 0];
+                        temp_y = i + direction[k, 1];
+                        if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8 && curChessboard[temp_x][temp_y] == 0)
+                        {
+                            if (curChessboard[i][j] == curColor)
+                            {
+                                cur_front_count++;
+                            }
+                            else
+                            {
+                                adv_front_count++;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
-				for (int j = 0; j < 8; j++) {
+        // 所佔個數 heuristic 值
+        if (current_count > adver_count)
+        {
+            parity_value = (100 * current_count) / (current_count + adver_count);
+        }
+        else if (current_count < adver_count)
+        {
+            parity_value = -(100 * adver_count) / (current_count + adver_count);
+        }
+        else
+        {
+            parity_value = 0;
+        }
+        // 周圍是否有空格的 heuristic 值
+        if (cur_front_count > adv_front_count)
+        {
+            front_value = -(100 * cur_front_count) / (cur_front_count + adv_front_count);
+        }
+        else if (cur_front_count < adv_front_count)
+        {
+            front_value = (100 * adv_front_count) / (cur_front_count + adv_front_count);
+        }
+        else
+        {
+            front_value = 0;
+        }
+        //            Console.WriteLine(" current_count : " + current_count + " adver_count : " + adver_count + " parity_value : " + parity_value);
+        //            Console.WriteLine(" cur_front_count : " + cur_front_count + " adv_front_count : " + adv_front_count + " front_value : " + front_value);
 
-					if (curChessboard [i][ j] == 0) {
-						result.Add (new Vector2 (i, j));
-					}
-				}
-			}
-		}
+        // 可下位置數目的 heuristic 值
+        //curColor 為輪到誰 但要算的是上一手下棋者的heuristic value 所以為相反
+        current_count = getAvailableLocation(-curColor).Count;
+        adver_count = getAvailableLocation(-adversary).Count;
 
-		return result;
-	}
+        if (current_count > adver_count)
+        {
+            mobility_value = (100 * current_count) / (current_count + adver_count);
+        }
+        else if (current_count < adver_count)
+        {
+            mobility_value = -(100 * adver_count) / (current_count + adver_count);
+        }
+        else
+        {
+            mobility_value = 0;
+        }
 
-	// 以棋子為起點向該方位 ( movex , movey) 延伸去找尋可放置棋子的位子 
-	int [] refound(int center_x , int center_y , int move_x , int move_y , int ad_target) {
+        // 加權
 
-		int[] place = new int[2];
+        h_value = (10.0 * parity_value) + (74.396 * front_value) + (20 * static_value) + (78.922 * mobility_value);
+        //          Console.WriteLine(" current_count : " + current_count + " adver_count : " + adver_count + " mobility_value : " + mobility_value);
+        //          Console.WriteLine(" static_value : " + static_value);
+        //          Console.WriteLine(" level : "+curLevel +" h : "+h_value);
+        return h_value;
+    }
 
-		if (center_x > -1 && center_x < 8 && center_y > -1 && center_y < 8) {  // 若在 8X8 邊界內
+    // 輪到該 player 執棋時 -> 找出所有可放棋的位置
+    public List<int[]> getAvailableLocation(int player)
+    {
 
-			if (curChessboard [center_x][ center_y] == ad_target) { // 和對方棋子相鄰 -> 繼續往相同方向檢查 -> 直到碰到邊界或空格
-
-				place = refound (center_x + move_x, center_y + move_y, move_x, move_y, ad_target);	
-
-			} else if (curChessboard [center_x][ center_y] == 0) {  // 位置為空的 -> 可以放棋
-
-				place [0] = center_x;
-				place [1] = center_y;
-			} else {
-				place = null;
-			}
-		} else {
-			place = null;	// 沒有位置可放 -> 碰到邊界或位置全部已佔滿	
-		}
-
-		return place;
-	}
+        int target, ad_target, temp_x, temp_y;    // target : player的棋子顏色 , ad_target : 對手的棋子顏色
+        int[] temp;
+        int[] temp_v;
+        List<int[]> result = new List<int[]>();  // 可放棋子的位置集合
 
 
-	private int[,] changeBoard(){
-		int[,] newBoard = new int[8, 8];
-		for (int i = 0; i < 8; i++) {
-			for (int j = 0; j < 8; j++) {
-				newBoard [i, j] = curChessboard [i] [j];
-			}
-		}
-		return newBoard;
-	}
+        target = player;
+        ad_target = -player;
+
+        for (int i = 0; i < 8; i++)
+        {  // 掃過整個盤面，尋找 player 所有的棋子
+
+            for (int j = 0; j < 8; j++)
+            {
+                if (curChessboard[i][j] == target)
+                {   // 若找到的話，檢查其周遭的所有位置 -> 共8格
+
+                    for (int k = 0; k < 8; k++)
+                    {
+                        temp_x = i + direction[k, 0];
+                        temp_y = j + direction[k, 1];
+                        // 若在棋盤範圍內且為對方顏色棋子 -> 繼續延伸尋找 ( refound )
+                        if (temp_x > -1 && temp_x < 8 && temp_y > -1 && temp_y < 8)
+                        {
+                            if ((curChessboard[temp_x][temp_y] == ad_target))
+                            {
+                                temp = refound(temp_x, temp_y, direction[k, 0], direction[k, 1], ad_target);  // 尋找可放棋位置
+                            }
+                            else
+                            {
+                                temp = null;
+                            }
+                            // 若有找到可下位置
+                            if (temp != null)
+                            {
+                                bool reapplied = false;
+                                temp_v = new int[] { temp[0], temp[1] };
+                                foreach (int[] point in result)
+                                {
+                                    if (point[0] == temp_v[0] && point[1] == temp_v[1])
+                                    {
+                                        reapplied = true;
+                                        break;
+                                    }
+
+                                }
+                                if (!reapplied)
+                                {
+                                    result.Add(temp_v);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // 以棋子為起點向該方位 ( movex , movey) 延伸去找尋可放置棋子的位子 
+    int[] refound(int center_x, int center_y, int move_x, int move_y, int ad_target)
+    {
+
+        int[] place = new int[2];
+
+        if (center_x > -1 && center_x < 8 && center_y > -1 && center_y < 8)
+        {  // 若在 8X8 邊界內
+
+            if (curChessboard[center_x][center_y] == ad_target)
+            { // 和對方棋子相鄰 -> 繼續往相同方向檢查 -> 直到碰到邊界或空格
+
+                place = refound(center_x + move_x, center_y + move_y, move_x, move_y, ad_target);
+
+            }
+            else if (curChessboard[center_x][center_y] == 0)
+            {  // 位置為空的 -> 可以放棋
+
+                place[0] = center_x;
+                place[1] = center_y;
+            }
+            else
+            {
+                place = null;
+            }
+        }
+        else
+        {
+            place = null;   // 沒有位置可放 -> 碰到邊界或位置全部已佔滿	
+        }
+
+        return place;
+    }
+
+
+
+
+
+
+
+
+
+
 
     //get chessboard after move chess
-    private int[][] chessboardAfterStep(int[] step,int[][] newBoard)
+    private int[][] chessboardAfterStep(int[] step, int[][] newBoard)
     {
         int row = step[0];
         int col = step[1];
         newBoard[row][col] = curColor;
-        newBoard = change(newBoard ,row, col, -1, -1);
-        newBoard = change(newBoard, row, col, -1,  0);
-        newBoard = change(newBoard, row, col, -1,  1);
-        newBoard = change(newBoard, row, col,  0, -1);
-        newBoard = change(newBoard, row, col,  0,  1);
-        newBoard = change(newBoard, row, col,  1, -1);
-        newBoard = change(newBoard, row, col,  1,  0);
-        newBoard = change(newBoard, row, col,  1,  1);
+        newBoard = change(newBoard, row, col, -1, -1);
+        newBoard = change(newBoard, row, col, -1, 0);
+        newBoard = change(newBoard, row, col, -1, 1);
+        newBoard = change(newBoard, row, col, 0, -1);
+        newBoard = change(newBoard, row, col, 0, 1);
+        newBoard = change(newBoard, row, col, 1, -1);
+        newBoard = change(newBoard, row, col, 1, 0);
+        newBoard = change(newBoard, row, col, 1, 1);
         clearPossiblePosition(newBoard);
         return newBoard;
     }
@@ -341,7 +447,7 @@ public class GameAi {
         }
         return board;
     }
-    //
+    //clear possible position
     private void clearPossiblePosition(int[][] chessboard)
     {
         for (int i = 0; i < chessboard.Length; i++)
@@ -356,11 +462,10 @@ public class GameAi {
             }
         }
     }
-
     //find all possible steps ***原為搜尋黑棋 可改為搜尋空
     private void findPossibleStepAI()
     {
-        possibleStep = new List<Data>();
+        List<Data> possibleStep = new List<Data>();
         stepCounts = 0;
         for (int i = 0; i < curChessboard.Length; i++)
         {
@@ -380,9 +485,9 @@ public class GameAi {
                     checkAI(i, j, 1, 1);
                 }
             }
-        } 
+        }
     }
-    //recursive find all possible steps
+    //recursive find all possible steps (called by possible findPossibleStepAI)
     private int checkAI(int ori_row, int ori_col, int offset_row, int offset_col)
     {
 
@@ -401,7 +506,7 @@ public class GameAi {
         if (curChessboard[row][col] == 0)
             return 1;
         //鄰近點為對手旗子 (如果為1代表在recursive中遇到空，所以為可下的棋)
-        if(checkAI(row, col, offset_row, offset_col) == 1)
+        if (checkAI(row, col, offset_row, offset_col) == 1)
         {
             curChessboard[row + offset_row][col + offset_col] = 2;
             stepCounts++;
@@ -410,14 +515,14 @@ public class GameAi {
         }
         return 2;
     }
-    
+
     public static int[][] copyBoard(int[][] board)
     {
         int[][] newboard = new int[board.Length][];
-        for(int i = 0; i < board.Length; i++)
+        for (int i = 0; i < board.Length; i++)
         {
             newboard[i] = new int[board[0].Length];
-            for(int j = 0; j < board[0].Length; j++)
+            for (int j = 0; j < board[0].Length; j++)
             {
                 newboard[i][j] = board[i][j];
             }

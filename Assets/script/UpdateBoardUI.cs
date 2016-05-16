@@ -44,7 +44,7 @@ public class UpdateBoardUI : MonoBehaviour {
 
 			foreach (Vector2 position in locations) {
 				GameObject chess = GameObject.Find ((position.x + 1) + "-" + (position.y + 1));
-				Debug.Log (chess);
+				//Debug.Log (chess);
 				chess.GetComponent<SpriteRenderer> ().sprite = Hint;
 			}
 		}

@@ -41,6 +41,7 @@ public class AI : MonoBehaviour {
 				location = BestFirstSearch(playerColor);
 				break;
 		case GAME_ALGORITHM:
+            case GameAlgorithm:
                 location = GameAlgorithm(playerColor);
                 break;
         }

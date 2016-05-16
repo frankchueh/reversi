@@ -10,11 +10,12 @@ public class AI : MonoBehaviour {
 	public int mAlgorithm;
 	const int HILL_CLIMBING = 1001;
     const int BFS = 1002;
-	public GameObject chessSet;
+    const int GAME_ALGORITHM = 1003;
+    public GameObject chessSet;
 
 	// Use this for initialization
 	void Start () {
-		mAlgorithm = HILL_CLIMBING;
+		mAlgorithm = GAME_ALGORITHM;
 	}
 	
 	// Update is called once per frame
@@ -39,7 +40,10 @@ public class AI : MonoBehaviour {
 			case BFS:
 				location = BestFirstSearch(playerColor);
 				break;
-		}
+		case GAME_ALGORITHM:
+                location = GameAlgorithm(playerColor);
+                break;
+        }
 		Debug.Log ("AI's move :" + (location.x+1) + "/" + (location.y+1));
 		return GameObject.Find ((location.x + 1) + "-" + (location.y + 1));
 
@@ -101,7 +105,7 @@ public class AI : MonoBehaviour {
         return bestPosition[UnityEngine.Random.Range(0, bestPosition.Count - 1)];
     }
 
-	/*Vector2 GeneticAlgorithm(int player) 
+    /*Vector2 GeneticAlgorithm(int player) 
 	{
 		List<Vector2> locations = mainInstance.getAvailableLocation(mainInstance.currentPlayer);
 		int[,] initBoard = (int[,])mainInstance.mBoard.Clone();
@@ -130,8 +134,42 @@ public class AI : MonoBehaviour {
 
 		return fitness;
 	}*/
-		
-	void boardUpdate(int pos_x , int pos_y , int [,] temp_board , int p) {  // 更新盤面
+
+    Vector2 GameAlgorithm(int player)
+    {
+        int[,] initBoard = (int[,])mainInstance.mBoard.Clone();
+        GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), player);
+        int[] step = ga.bestMove();
+        Vector2 bestPosition = new Vector2(step[0], step[1]);
+        return bestPosition;
+    }
+
+    int[][] d2ArrayTo2d1Array(int[,] oriBoard)
+    {
+        int[][] newBoard = new int[8][];
+        for (int i = 0; i < 8; i++)
+        {
+            newBoard[i] = new int[8];
+            for (int j = 0; j < 8; j++)
+            {
+                switch (oriBoard[i, j])
+                {
+                    case 2:
+                        newBoard[i][j] = 1;
+                        break;
+                    case 1:
+                        newBoard[i][j] = -1;
+                        break;
+                    case 0:
+                        newBoard[i][j] = 0;
+                        break;
+                }
+            }
+        }
+        return newBoard;
+    }
+
+    void boardUpdate(int pos_x , int pos_y , int [,] temp_board , int p) {  // 更新盤面
 
 		int temp_x , temp_y , adversary;
 

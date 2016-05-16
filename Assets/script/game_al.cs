@@ -87,7 +87,7 @@ public class GameAi {
         foreach (Data data in possibleStep)
         {
             //往下找 新的AI為curlevel+1 , 棋盤下一步 , 顏色變換
-            double subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
+			double subWeight = new GameAi(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
             //             Console.WriteLine("curLevel : "+curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
             if (subWeight >= bestWeight)    //maximize (Random select)
             {
@@ -103,7 +103,7 @@ public class GameAi {
             }
         }
         //          Console.WriteLine(" weight : " + bestWeight );
-        Random random = new Random();
+        System.Random random = new System.Random();
         return bestStep[random.Next(bestStep.Count)];
     }
     //recursive find best step weight (called by bestMove) 
@@ -125,7 +125,7 @@ public class GameAi {
             double subWeight;
             if (curLevel % 2 == 0)
             {
-                subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
+				subWeight = new GameAi(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
                 //parent node取最小值, 由child node中取最大值, 所以這個subWeight > levelExtremumValue則直接break
                 if (subWeight > levelExtremumValue)
                 {
@@ -135,7 +135,7 @@ public class GameAi {
             }
             else
             {
-                subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, worstWeight).weight();
+				subWeight = new GameAi(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, worstWeight).weight();
                 //parent node取最大值, 由child node中取最小值, 所以這個subWeight < levelExtremumValue則直接break
                 if (subWeight < levelExtremumValue)
                 {

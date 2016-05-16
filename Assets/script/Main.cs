@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 
 public class Main : MonoBehaviour {
+
 	public const int BLACK = 2, WHITE = 1;
 	public int currentPlayer , BLACK_NUM , WHITE_NUM;
 	public int[,] mBoard;

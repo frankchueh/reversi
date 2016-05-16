@@ -134,6 +134,7 @@ public class AI : MonoBehaviour {
 
     Vector2 GameAlgorithm(int player)
     {
+		Debug.Log ("GA's turn");
         int[,] initBoard = (int[,])mainInstance.mBoard.Clone();
         int color = (player == 2) ? 1 : -1;
         GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), color);

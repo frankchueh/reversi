@@ -15,7 +15,7 @@ public class AI : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		mAlgorithm = HILL_CLIMBING;
+		mAlgorithm = GAME_ALGORITHM;
 	}
 	
 	// Update is called once per frame
@@ -40,7 +40,7 @@ public class AI : MonoBehaviour {
 			case BFS:
 				location = BestFirstSearch(playerColor);
 				break;
-		case GAME_ALGORITHM:
+    		case GAME_ALGORITHM:
                 location = GameAlgorithm(playerColor);
                 break;
         }
@@ -137,8 +137,10 @@ public class AI : MonoBehaviour {
 
     Vector2 GameAlgorithm(int player)
     {
+		Debug.Log ("GA's turn");
         int[,] initBoard = (int[,])mainInstance.mBoard.Clone();
-        GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), player);
+        int color = (player == 2) ? 1 : -1;
+        GameAi ga = new GameAi(d2ArrayTo2d1Array(initBoard), color);
         int[] step = ga.bestMove();
         Vector2 bestPosition = new Vector2(step[0], step[1]);
         return bestPosition;

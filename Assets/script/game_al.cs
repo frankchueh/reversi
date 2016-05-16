@@ -84,11 +84,10 @@ public class GameAi {
         List<int[]> bestStep = new List<int[]>();
         double bestWeight = Double.MinValue;
         bestStep.Add(new int[] { -1, -1 });
-        double extremumValue = Double.MinValue;
         foreach (Data data in possibleStep)
         {
             //往下找 新的AI為curlevel+1 , 棋盤下一步 , 顏色變換
-            double subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, extremumValue).weight();
+            double subWeight = new AI(curLevel + 1, chessboardAfterStep(data.get(), copyBoard(curChessboard)), -curColor, bestWeight).weight();
             //             Console.WriteLine("curLevel : "+curLevel + " row : " + data.getRow() + " column :  " + data.getColumn() + " weight : " + subWeight);
             if (subWeight >= bestWeight)    //maximize (Random select)
             {

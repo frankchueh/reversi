@@ -15,7 +15,7 @@ public class AI : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		mAlgorithm = GAME_ALGORITHM;
+		mAlgorithm = HILL_CLIMBING;
 	}
 	
 	// Update is called once per frame
@@ -41,7 +41,6 @@ public class AI : MonoBehaviour {
 				location = BestFirstSearch(playerColor);
 				break;
 		case GAME_ALGORITHM:
-            case GameAlgorithm:
                 location = GameAlgorithm(playerColor);
                 break;
         }

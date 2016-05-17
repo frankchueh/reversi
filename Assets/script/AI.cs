@@ -7,15 +7,12 @@ public class AI : MonoBehaviour {
 		
 	public int playerColor = Main.WHITE;
 	public Main mainInstance;
-	public int mAlgorithm;
-	const int HILL_CLIMBING = 1001;
-    const int BFS = 1002;
-    const int GAME_ALGORITHM = 1003;
-    public GameObject chessSet;
+	public enum mAlgorithm {HillClimbing, BFS, GameAlgorithm};
+	public mAlgorithm currentAlgorithm;
 
 	// Use this for initialization
 	void Start () {
-		mAlgorithm = GAME_ALGORITHM;
+		currentAlgorithm = mAlgorithm.GameAlgorithm;
 	}
 	
 	// Update is called once per frame
@@ -24,23 +21,23 @@ public class AI : MonoBehaviour {
 		{
 			if (mainInstance.getAvailableLocation (playerColor) != null) 
 			{
-				mainInstance.getClickOnItemEvent (getBestPosition (mAlgorithm));
+				mainInstance.getClickOnItemEvent (getBestPosition (currentAlgorithm));
 			}
 		}
 	}
 
 	// AI 下棋 -> 決定要下的位置
-	GameObject getBestPosition(int algorithm)
+	GameObject getBestPosition(mAlgorithm algorithm)
 	{	
 		Vector2 location = new Vector2(0,0);
 		switch (algorithm) {
-			case HILL_CLIMBING:
+			case mAlgorithm.HillClimbing:
 				location = HillClimbing(playerColor);
 				break;
-			case BFS:
+			case mAlgorithm.BFS:
 				location = BestFirstSearch(playerColor);
 				break;
-    		case GAME_ALGORITHM:
+			case mAlgorithm.GameAlgorithm:
                 location = GameAlgorithm(playerColor);
                 break;
         }

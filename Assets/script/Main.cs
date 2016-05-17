@@ -16,7 +16,7 @@ public class Main : MonoBehaviour {
 										{ -3, -4, -1, -1, -1, -1, -4, -3 },
 										{ 4	, -3, 2, 2, 2, 2, -3, 4 }};
 	public UpdateBoardUI mUpdateInstance;
-	public GUIText finishText;
+	public GUIText finishText , whiteScoreText , blackScoreText;
 
 	public int [,] direction = { { -1, 1 } , { 0, 1 } , { 1, 1 } , { -1, 0 },   // 棋子上下左右斜方所有方位位移量的集合
 		{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
@@ -35,7 +35,7 @@ public class Main : MonoBehaviour {
 		mBoard [3, 4] = BLACK;
 		mBoard [4, 3] = BLACK;
 		currentPlayer = BLACK;  // 黑棋先執
-
+		BLACK_NUM = WHITE_NUM = 2;
 	}
 
 	public void setBoardChess(int x, int y)
@@ -71,7 +71,17 @@ public class Main : MonoBehaviour {
 					currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
 				}
 		} else {	// 若沒有地方可下 -> 換對手下
-			currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
+			if (isFinish ()) {
+				if (BLACK_NUM > WHITE_NUM) {
+					finishText.text = "Black Win!";
+				} else if (BLACK_NUM < WHITE_NUM) {
+					finishText.text = "White Win!";
+				} else if (BLACK_NUM == WHITE_NUM) {
+					finishText.text = "Tie";	
+				}
+			} else {
+				currentPlayer = (currentPlayer == BLACK) ? WHITE : BLACK;
+			}
 		}
 	}
 		
@@ -208,29 +218,37 @@ public class Main : MonoBehaviour {
 
 	bool isFinish() {  // 判斷遊戲結束
 
-		bool end = true;
 		int bn = 0, wn = 0;
+		List<Vector2> a_location = new List<Vector2> ();
+		List<Vector2> b_location = new List<Vector2> ();
 
 		for (int i = 0; i < 8; i++) {
 
 			for (int j = 0; j < 8; j++) {
 
-				if (mBoard [i, j] == 0) {
-					end = false;
-					break;
-				} else if (mBoard [i, j] == BLACK) {
+			    if (mBoard [i, j] == BLACK) {
 					bn++;
 				} else if (mBoard [i, j] == WHITE) {
 					wn++;
 				}
 			}
-			if (!end) {
-				break;
-			}
 		}
+
 		BLACK_NUM = bn;
 		WHITE_NUM = wn;
-		return end;
+
+		whiteScoreText.text = "White :" + wn;
+		blackScoreText.text = "Black :" + bn;
+
+		a_location = getAvailableLocation (BLACK);
+		b_location = getAvailableLocation (WHITE);
+
+		if (a_location == null && b_location == null) {  // 雙方皆無法下棋時
+			Debug.Log("To the end");
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	// 計算盤面的 heuristicEvaluate

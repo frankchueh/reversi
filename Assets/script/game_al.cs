@@ -20,7 +20,7 @@ public class GameAi {
 	{ 1, 0 } , { -1, -1 } , { 0, -1 } , { 1, -1 } };
     /**---------------------------------------------------------------------------------------------------*/
 
-    static int maxlevel = 3; //預測層數 ***level
+    static int maxlevel = 4; //預測層數 ***level
     int curLevel; //現在層數
     int curColor; //現在顏色
     int stepCounts; //可走的步數
